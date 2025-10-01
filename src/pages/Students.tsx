@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api";
-import { Student } from "@/lib/types";
+import { Student, Predmet } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { UserPlus, Edit, Trash2, Plus, Search, BookOpen, Loader2 } from "lucide-react";
+import { UserPlus, Edit, Trash2, Plus, Search, BookOpen, Loader2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Students = () => {
@@ -21,7 +21,10 @@ const Students = () => {
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddPredmetDialog, setShowAddPredmetDialog] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
+  const [allPredmeti, setAllPredmeti] = useState<Predmet[]>([]);
+  const [selectedPredmetId, setSelectedPredmetId] = useState("");
   
   const [formData, setFormData] = useState({
     ime: "",
@@ -32,12 +35,13 @@ const Students = () => {
 
   useEffect(() => {
     fetchStudents();
+    fetchAllPredmeti();
   }, []);
 
   const fetchStudents = async (filter?: { on: string; query: string }) => {
     setLoading(true);
     try {
-      let endpoint = "/Students";
+      let endpoint = "/Student";
       if (filter?.on && filter?.query) {
         endpoint += `?filterOn=${encodeURIComponent(filter.on)}&query=${encodeURIComponent(filter.query)}`;
       }
@@ -47,6 +51,15 @@ const Students = () => {
       toast.error("Greška pri učitavanju studenata: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllPredmeti = async () => {
+    try {
+      const data = await apiClient.get("/Predmet?pageNumber=1&pageSize=1000");
+      setAllPredmeti(data.predmeti || []);
+    } catch (error: any) {
+      toast.error("Greška pri učitavanju predmeta: " + error.message);
     }
   };
 
@@ -61,7 +74,7 @@ const Students = () => {
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/Students", formData);
+      await apiClient.post("/Student", formData);
       toast.success("Student uspešno dodat!");
       setShowAddDialog(false);
       setFormData({ ime: "", prezime: "", index: "", smer: "" });
@@ -75,7 +88,7 @@ const Students = () => {
     e.preventDefault();
     if (!currentStudent) return;
     try {
-      await apiClient.put(`/Students/${currentStudent.id}`, formData);
+      await apiClient.put(`/Student/${currentStudent.id}`, formData);
       toast.success("Student uspešno izmenjen!");
       setShowEditDialog(false);
       setCurrentStudent(null);
@@ -88,7 +101,7 @@ const Students = () => {
   const handleDeleteStudent = async (id: string) => {
     if (!confirm("Da li ste sigurni da želite da obrišete studenta?")) return;
     try {
-      await apiClient.delete(`/Students/${id}`);
+      await apiClient.delete(`/Student/${id}`);
       toast.success("Student obrisan!");
       fetchStudents();
     } catch (error: any) {
@@ -105,6 +118,37 @@ const Students = () => {
       smer: student.smer,
     });
     setShowEditDialog(true);
+  };
+
+  const openAddPredmetDialog = (student: Student) => {
+    setCurrentStudent(student);
+    setSelectedPredmetId("");
+    setShowAddPredmetDialog(true);
+  };
+
+  const handleAddPredmetToStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentStudent || !selectedPredmetId) return;
+    try {
+      await apiClient.post(`/Student/${currentStudent.id}/predmet/${selectedPredmetId}`);
+      toast.success("Predmet uspešno dodat studentu!");
+      setShowAddPredmetDialog(false);
+      setSelectedPredmetId("");
+      fetchStudents();
+    } catch (error: any) {
+      toast.error("Greška: " + error.message);
+    }
+  };
+
+  const handleRemovePredmetFromStudent = async (studentId: string, predmetId: string) => {
+    if (!confirm("Da li ste sigurni da želite da uklonite predmet?")) return;
+    try {
+      await apiClient.delete(`/Student/${studentId}/predmet/${predmetId}`);
+      toast.success("Predmet uklonjen!");
+      fetchStudents();
+    } catch (error: any) {
+      toast.error("Greška: " + error.message);
+    }
   };
 
   if (loading) {
@@ -177,13 +221,33 @@ const Students = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Predmeti:</span>
+                    {role === "Admin" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openAddPredmetDialog(student)}
+                        className="h-6 w-6 p-0 ml-auto"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                   {student.predmeti && student.predmeti.length > 0 ? (
                     <div className="space-y-1">
                       {student.predmeti.map((predmet, idx) => (
-                        <div key={idx} className="text-sm flex justify-between items-center py-1 px-2 bg-secondary/50 rounded">
-                          <span>{predmet.naziv}</span>
+                        <div key={idx} className="text-sm flex justify-between items-center py-1 px-2 bg-secondary/50 rounded gap-2">
+                          <span className="flex-1">{predmet.naziv}</span>
                           <Badge variant="outline">{predmet.ocena}</Badge>
+                          {role === "Admin" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRemovePredmetFromStudent(student.id, predmet.id)}
+                              className="h-5 w-5 p-0 hover:bg-destructive/10"
+                            >
+                              <X className="h-3 w-3 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -310,6 +374,40 @@ const Students = () => {
                 />
               </div>
               <Button type="submit" className="w-full">Sačuvaj izmene</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showAddPredmetDialog} onOpenChange={setShowAddPredmetDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Dodaj predmet studentu</DialogTitle>
+              <DialogDescription>
+                Dodavanje predmeta za: {currentStudent?.ime} {currentStudent?.prezime}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAddPredmetToStudent} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Predmet</Label>
+                <Select value={selectedPredmetId} onValueChange={setSelectedPredmetId} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Izaberite predmet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allPredmeti
+                      .filter(p => !currentStudent?.predmeti?.some(sp => sp.id === p.id))
+                      .map((predmet) => (
+                        <SelectItem key={predmet.id} value={predmet.id}>
+                          {predmet.naziv} ({predmet.espb} ESPB)
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Dodaj predmet
+              </Button>
             </form>
           </DialogContent>
         </Dialog>

@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api";
-import { Profesor } from "@/lib/types";
+import { Profesor, Predmet } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { UserPlus, Edit, Trash2, Plus, Search, BookOpen, Loader2 } from "lucide-react";
+import { UserPlus, Edit, Trash2, Plus, Search, BookOpen, Loader2, X } from "lucide-react";
 
 const Profesori = () => {
   const [profesori, setProfesori] = useState<Profesor[]>([]);
@@ -20,7 +20,10 @@ const Profesori = () => {
   
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showAddPredmetDialog, setShowAddPredmetDialog] = useState(false);
   const [currentProfesor, setCurrentProfesor] = useState<Profesor | null>(null);
+  const [allPredmeti, setAllPredmeti] = useState<Predmet[]>([]);
+  const [selectedPredmetId, setSelectedPredmetId] = useState("");
   
   const [formData, setFormData] = useState({
     ime: "",
@@ -30,6 +33,7 @@ const Profesori = () => {
 
   useEffect(() => {
     fetchProfesori();
+    fetchAllPredmeti();
   }, []);
 
   const fetchProfesori = async (filter?: { on: string; query: string }) => {
@@ -45,6 +49,15 @@ const Profesori = () => {
       toast.error("Greška pri učitavanju profesora: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllPredmeti = async () => {
+    try {
+      const data = await apiClient.get("/Predmet?pageNumber=1&pageSize=1000");
+      setAllPredmeti(data.predmeti || []);
+    } catch (error: any) {
+      toast.error("Greška pri učitavanju predmeta: " + error.message);
     }
   };
 
@@ -102,6 +115,37 @@ const Profesori = () => {
       email: profesor.email,
     });
     setShowEditDialog(true);
+  };
+
+  const openAddPredmetDialog = (profesor: Profesor) => {
+    setCurrentProfesor(profesor);
+    setSelectedPredmetId("");
+    setShowAddPredmetDialog(true);
+  };
+
+  const handleAddPredmetToProfesor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentProfesor || !selectedPredmetId) return;
+    try {
+      await apiClient.post(`/Profesor/${currentProfesor.id}/predmet/${selectedPredmetId}`);
+      toast.success("Predmet uspešno dodat profesoru!");
+      setShowAddPredmetDialog(false);
+      setSelectedPredmetId("");
+      fetchProfesori();
+    } catch (error: any) {
+      toast.error("Greška: " + error.message);
+    }
+  };
+
+  const handleRemovePredmetFromProfesor = async (profesorId: string, predmetId: string) => {
+    if (!confirm("Da li ste sigurni da želite da uklonite predmet?")) return;
+    try {
+      await apiClient.delete(`/Profesor/${profesorId}/predmet/${predmetId}`);
+      toast.success("Predmet uklonjen!");
+      fetchProfesori();
+    } catch (error: any) {
+      toast.error("Greška: " + error.message);
+    }
   };
 
   if (loading) {
@@ -173,12 +217,32 @@ const Profesori = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Predmeti:</span>
+                    {role === "Admin" && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openAddPredmetDialog(profesor)}
+                        className="h-6 w-6 p-0 ml-auto"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    )}
                   </div>
                   {profesor.predmeti && profesor.predmeti.length > 0 ? (
                     <ul className="space-y-1">
                       {profesor.predmeti.map((predmet, idx) => (
-                        <li key={idx} className="text-sm py-1 px-2 bg-secondary/50 rounded">
-                          {predmet.naziv}
+                        <li key={idx} className="text-sm py-1 px-2 bg-secondary/50 rounded flex items-center justify-between">
+                          <span>{predmet.naziv}</span>
+                          {role === "Admin" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRemovePredmetFromProfesor(profesor.id, predmet.id)}
+                              className="h-5 w-5 p-0 hover:bg-destructive/10"
+                            >
+                              <X className="h-3 w-3 text-destructive" />
+                            </Button>
+                          )}
                         </li>
                       ))}
                     </ul>
@@ -291,6 +355,40 @@ const Profesori = () => {
                 />
               </div>
               <Button type="submit" className="w-full">Sačuvaj izmene</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showAddPredmetDialog} onOpenChange={setShowAddPredmetDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Dodaj predmet profesoru</DialogTitle>
+              <DialogDescription>
+                Dodavanje predmeta za: {currentProfesor?.ime} {currentProfesor?.prezime}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAddPredmetToProfesor} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Predmet</Label>
+                <Select value={selectedPredmetId} onValueChange={setSelectedPredmetId} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Izaberite predmet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allPredmeti
+                      .filter(p => !currentProfesor?.predmeti?.some(pp => pp.id === p.id))
+                      .map((predmet) => (
+                        <SelectItem key={predmet.id} value={predmet.id}>
+                          {predmet.naziv} ({predmet.espb} ESPB)
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Dodaj predmet
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
