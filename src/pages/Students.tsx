@@ -2,14 +2,35 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { apiClient } from "@/lib/api";
 import { Student, Predmet } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { UserPlus, Edit, Trash2, Plus, Search, BookOpen, Loader2, X } from "lucide-react";
+import {
+  UserPlus,
+  Edit,
+  Trash2,
+  Plus,
+  Search,
+  BookOpen,
+  Loader2,
+  X,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Students = () => {
@@ -18,14 +39,14 @@ const Students = () => {
   const [filterOn, setFilterOn] = useState("Ime");
   const [filterQuery, setFilterQuery] = useState("");
   const { role } = useAuth();
-  
+
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showAddPredmetDialog, setShowAddPredmetDialog] = useState(false);
   const [currentStudent, setCurrentStudent] = useState<Student | null>(null);
   const [allPredmeti, setAllPredmeti] = useState<Predmet[]>([]);
   const [selectedPredmetId, setSelectedPredmetId] = useState("");
-  
+
   const [formData, setFormData] = useState({
     ime: "",
     prezime: "",
@@ -41,9 +62,11 @@ const Students = () => {
   const fetchStudents = async (filter?: { on: string; query: string }) => {
     setLoading(true);
     try {
-      let endpoint = "/Student";
+      let endpoint = "/Students";
       if (filter?.on && filter?.query) {
-        endpoint += `?filterOn=${encodeURIComponent(filter.on)}&query=${encodeURIComponent(filter.query)}`;
+        endpoint += `?filterOn=${encodeURIComponent(
+          filter.on
+        )}&query=${encodeURIComponent(filter.query)}`;
       }
       const data = await apiClient.get(endpoint);
       setStudents(data);
@@ -74,7 +97,7 @@ const Students = () => {
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiClient.post("/Student", formData);
+      await apiClient.post("/Students", formData);
       toast.success("Student uspešno dodat!");
       setShowAddDialog(false);
       setFormData({ ime: "", prezime: "", index: "", smer: "" });
@@ -101,7 +124,7 @@ const Students = () => {
   const handleDeleteStudent = async (id: string) => {
     if (!confirm("Da li ste sigurni da želite da obrišete studenta?")) return;
     try {
-      await apiClient.delete(`/Student/${id}`);
+      await apiClient.delete(`/Students/${id}`);
       toast.success("Student obrisan!");
       fetchStudents();
     } catch (error: any) {
@@ -126,24 +149,70 @@ const Students = () => {
     setShowAddPredmetDialog(true);
   };
 
-  const handleAddPredmetToStudent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentStudent || !selectedPredmetId) return;
+  // const handleAddPredmetToStudent = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   if (!currentStudent || !selectedPredmetId) return;
+  //   try {
+  //     await apiClient.post(
+  //       `/Students/${currentStudent.id}/predmet/${selectedPredmetId}`
+  //     );
+  //     toast.success("Predmet uspešno dodat studentu!");
+  //     setShowAddPredmetDialog(false);
+  //     setSelectedPredmetId("");
+  //     fetchStudents();
+  //   } catch (error: any) {
+  //     toast.error("Greška: " + error.message);
+  //   }
+  // };
+
+  const handleAddPredmetToStudent = async (
+    e: React.FormEvent | React.MouseEvent<HTMLButtonElement>
+  ) => {
+    // spreči submit/refresh
+    if ("preventDefault" in e) e.preventDefault();
+
+    if (!currentStudent?.id) {
+      toast.error("Nije izabran student.");
+      return;
+    }
+    if (!selectedPredmetId) {
+      toast.error("Izaberi predmet.");
+      return;
+    }
+
     try {
-      await apiClient.post(`/Student/${currentStudent.id}/predmet/${selectedPredmetId}`);
+      // Backend ruta: POST /api/StudentPredmet/{studentId},{predmetId}
+      const path = `/StudentPredmet/${encodeURIComponent(
+        currentStudent.id
+      )},${encodeURIComponent(selectedPredmetId)}`;
+
+      // Pošto backend čita iz route parametara, telo nije potrebno (pošalji null)
+      await apiClient.post(path, null);
+
       toast.success("Predmet uspešno dodat studentu!");
       setShowAddPredmetDialog(false);
       setSelectedPredmetId("");
-      fetchStudents();
-    } catch (error: any) {
-      toast.error("Greška: " + error.message);
+      if (typeof fetchStudents === "function") {
+        await fetchStudents(); // osveži listu
+      }
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.title ||
+        err?.response?.data?.message ||
+        (typeof err?.response?.data === "string" ? err.response.data : "") ||
+        err?.message ||
+        "Došlo je do greške.";
+      toast.error("Greška: " + msg);
     }
   };
 
-  const handleRemovePredmetFromStudent = async (studentId: string, predmetId: string) => {
+  const handleRemovePredmetFromStudent = async (
+    studentId: string,
+    predmetId: string
+  ) => {
     if (!confirm("Da li ste sigurni da želite da uklonite predmet?")) return;
     try {
-      await apiClient.delete(`/Student/${studentId}/predmet/${predmetId}`);
+      await apiClient.delete(`/Students/${studentId}/predmet/${predmetId}`);
       toast.success("Predmet uklonjen!");
       fetchStudents();
     } catch (error: any) {
@@ -235,14 +304,22 @@ const Students = () => {
                   {student.predmeti && student.predmeti.length > 0 ? (
                     <div className="space-y-1">
                       {student.predmeti.map((predmet, idx) => (
-                        <div key={idx} className="text-sm flex justify-between items-center py-1 px-2 bg-secondary/50 rounded gap-2">
+                        <div
+                          key={idx}
+                          className="text-sm flex justify-between items-center py-1 px-2 bg-secondary/50 rounded gap-2"
+                        >
                           <span className="flex-1">{predmet.naziv}</span>
                           <Badge variant="outline">{predmet.ocena}</Badge>
                           {role === "Admin" && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleRemovePredmetFromStudent(student.id, predmet.id)}
+                              onClick={() =>
+                                handleRemovePredmetFromStudent(
+                                  student.id,
+                                  predmet.id
+                                )
+                              }
                               className="h-5 w-5 p-0 hover:bg-destructive/10"
                             >
                               <X className="h-3 w-3 text-destructive" />
@@ -252,7 +329,9 @@ const Students = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground italic">Nema predmeta</p>
+                    <p className="text-sm text-muted-foreground italic">
+                      Nema predmeta
+                    </p>
                   )}
                 </div>
                 {role === "Admin" && (
@@ -291,14 +370,18 @@ const Students = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Dodaj novog studenta</DialogTitle>
-              <DialogDescription>Unesite podatke o novom studentu</DialogDescription>
+              <DialogDescription>
+                Unesite podatke o novom studentu
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddStudent} className="space-y-4">
               <div className="space-y-2">
                 <Label>Ime</Label>
                 <Input
                   value={formData.ime}
-                  onChange={(e) => setFormData({ ...formData, ime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ime: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -306,7 +389,9 @@ const Students = () => {
                 <Label>Prezime</Label>
                 <Input
                   value={formData.prezime}
-                  onChange={(e) => setFormData({ ...formData, prezime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, prezime: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -314,7 +399,9 @@ const Students = () => {
                 <Label>Index</Label>
                 <Input
                   value={formData.index}
-                  onChange={(e) => setFormData({ ...formData, index: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, index: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -322,7 +409,9 @@ const Students = () => {
                 <Label>Smer</Label>
                 <Input
                   value={formData.smer}
-                  onChange={(e) => setFormData({ ...formData, smer: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, smer: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -345,7 +434,9 @@ const Students = () => {
                 <Label>Ime</Label>
                 <Input
                   value={formData.ime}
-                  onChange={(e) => setFormData({ ...formData, ime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ime: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -353,7 +444,9 @@ const Students = () => {
                 <Label>Prezime</Label>
                 <Input
                   value={formData.prezime}
-                  onChange={(e) => setFormData({ ...formData, prezime: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, prezime: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -361,7 +454,9 @@ const Students = () => {
                 <Label>Index</Label>
                 <Input
                   value={formData.index}
-                  onChange={(e) => setFormData({ ...formData, index: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, index: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -369,33 +464,50 @@ const Students = () => {
                 <Label>Smer</Label>
                 <Input
                   value={formData.smer}
-                  onChange={(e) => setFormData({ ...formData, smer: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, smer: e.target.value })
+                  }
                   required
                 />
               </div>
-              <Button type="submit" className="w-full">Sačuvaj izmene</Button>
+              <Button type="submit" className="w-full">
+                Sačuvaj izmene
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showAddPredmetDialog} onOpenChange={setShowAddPredmetDialog}>
+        <Dialog
+          open={showAddPredmetDialog}
+          onOpenChange={setShowAddPredmetDialog}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Dodaj predmet studentu</DialogTitle>
               <DialogDescription>
-                Dodavanje predmeta za: {currentStudent?.ime} {currentStudent?.prezime}
+                Dodavanje predmeta za: {currentStudent?.ime}{" "}
+                {currentStudent?.prezime}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddPredmetToStudent} className="space-y-4">
               <div className="space-y-2">
                 <Label>Predmet</Label>
-                <Select value={selectedPredmetId} onValueChange={setSelectedPredmetId} required>
+                <Select
+                  value={selectedPredmetId}
+                  onValueChange={setSelectedPredmetId}
+                  required
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Izaberite predmet" />
                   </SelectTrigger>
                   <SelectContent>
                     {allPredmeti
-                      .filter(p => !currentStudent?.predmeti?.some(sp => sp.id === p.id))
+                      .filter(
+                        (p) =>
+                          !currentStudent?.predmeti?.some(
+                            (sp) => sp.id === p.id
+                          )
+                      )
                       .map((predmet) => (
                         <SelectItem key={predmet.id} value={predmet.id}>
                           {predmet.naziv} ({predmet.espb} ESPB)
