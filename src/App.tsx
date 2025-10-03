@@ -10,6 +10,8 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Profesori from "./pages/Profesori";
 import Predmeti from "./pages/Predmeti";
+import Ispiti from "./pages/Ispiti";
+import Ocene from "./pages/Ocene";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +58,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Predmeti />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ispiti"
+          element={
+            <ProtectedRoute>
+              <Ispiti />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ocene"
+          element={
+            <ProtectedRoute>
+              <Ocene />
             </ProtectedRoute>
           }
         />

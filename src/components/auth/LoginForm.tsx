@@ -35,10 +35,25 @@ export const LoginForm = () => {
         setAuthToken(response.jwtToken);
       }
 
-      const userRole = response.roles && response.roles[0] === "Writer" ? "Admin" : "Student";
-      login(email, userRole);
+      const uiRole = response.roles && response.roles[0] === "Writer" ? "Administrator" : "Student";
+      
+      // If student, fetch their data and store studentId
+      if (uiRole === "Student") {
+        try {
+          const indexFromEmail = extractIndexFromEmail(email);
+          if (indexFromEmail) {
+            const studentData = await apiClient.get(`/Students/${indexFromEmail}`);
+            sessionStorage.setItem("studentId", studentData.id);
+            sessionStorage.setItem("studentIndex", indexFromEmail);
+          }
+        } catch (err) {
+          console.error("Failed to fetch student data:", err);
+        }
+      }
+      
+      login(email, uiRole);
 
-      if (userRole === "Student") {
+      if (uiRole === "Student") {
         const studentIndex = extractIndexFromEmail(email);
         toast.success(`Dobrodošli, student ${studentIndex || email}!`);
       } else {

@@ -7,7 +7,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { role } = useAuth();
 
-  const cards = [
+  const adminCards = [
     {
       title: "Studenti",
       icon: Users,
@@ -20,16 +20,35 @@ const Dashboard = () => {
       icon: GraduationCap,
       path: "/profesori",
       description: "Upravljanje profesorima",
-      color: "from-purple-500 to-purple-600",
+      color: "from-indigo-500 to-indigo-600",
     },
     {
       title: "Predmeti",
       icon: BookOpen,
       path: "/predmeti",
       description: "Upravljanje predmetima",
-      color: "from-green-500 to-green-600",
+      color: "from-purple-500 to-purple-600",
     },
   ];
+
+  const studentCards = [
+    {
+      title: "Ispiti",
+      icon: BookOpen,
+      path: "/ispiti",
+      description: "Prijava ispita",
+      color: "from-blue-500 to-blue-600",
+    },
+    {
+      title: "Ocene",
+      icon: GraduationCap,
+      path: "/ocene",
+      description: "Pregled ocena",
+      color: "from-indigo-500 to-indigo-600",
+    },
+  ];
+
+  const cards = role === "Administrator" ? adminCards : studentCards;
 
   return (
     <div className="min-h-screen bg-background">
@@ -37,7 +56,7 @@ const Dashboard = () => {
         <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
           <p className="text-lg text-muted-foreground">
-            {role === "Admin" ? "Administratorski panel" : "Studentski portal"}
+            {role === "Administrator" ? "Administratorski panel" : "Studentski portal"}
           </p>
         </div>
 

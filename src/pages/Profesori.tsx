@@ -257,7 +257,7 @@ const Profesori = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Profesori</h1>
-          {role === "Admin" && (
+          {role === "Administrator" && (
             <Button onClick={() => setShowAddDialog(true)} className="gap-2">
               <UserPlus className="h-4 w-4" />
               Dodaj profesora
@@ -313,7 +313,7 @@ const Profesori = () => {
                   <div className="flex items-center gap-2 mb-2">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Predmeti:</span>
-                    {role === "Admin" && (
+                    {role === "Administrator" && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -332,7 +332,7 @@ const Profesori = () => {
                           className="text-sm py-1 px-2 bg-secondary/50 rounded flex items-center justify-between"
                         >
                           <span>{predmet.naziv}</span>
-                          {role === "Admin" && (
+                          {role === "Administrator" && (
                             <Button
                               size="sm"
                               variant="ghost"
@@ -356,7 +356,7 @@ const Profesori = () => {
                     </p>
                   )}
                 </div>
-                {role === "Admin" && (
+                {role === "Administrator" && (
                   <div className="flex gap-2 mt-4">
                     <Button
                       size="sm"

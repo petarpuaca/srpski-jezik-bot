@@ -48,3 +48,29 @@ export interface PaginatedResponse<T> {
   predmeti: T[];
   totalCount: number;
 }
+
+export interface IspitStavka {
+  id: string;
+  deo: string;
+  stavkaId: string;
+  poeni?: number;
+  ocena?: number;
+}
+
+export interface Ispit {
+  id: string;
+  rok: string;
+  godina: number;
+  student?: {
+    id: string;
+    ime: string;
+    prezime: string;
+    index: string;
+  };
+  predmet?: {
+    id: string;
+    naziv: string;
+  };
+  stavke: IspitStavka[];
+  datumPrijave?: string;
+}

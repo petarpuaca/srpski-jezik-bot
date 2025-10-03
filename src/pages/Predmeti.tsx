@@ -111,7 +111,7 @@ const Predmeti = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Predmeti</h1>
-          {role === "Admin" && (
+          {role === "Administrator" && (
             <Button onClick={() => setShowAddDialog(true)} className="gap-2">
               <BookPlus className="h-4 w-4" />
               Dodaj predmet
@@ -145,7 +145,7 @@ const Predmeti = () => {
                     <TableHead className="w-[50px]">#</TableHead>
                     <TableHead>Naziv predmeta</TableHead>
                     <TableHead className="w-[100px]">ESPB</TableHead>
-                    {role === "Admin" && (
+                    {role === "Administrator" && (
                       <TableHead className="w-[150px] text-right">Akcije</TableHead>
                     )}
                   </TableRow>
@@ -158,7 +158,7 @@ const Predmeti = () => {
                       </TableCell>
                       <TableCell>{predmet.naziv}</TableCell>
                       <TableCell>{predmet.espb}</TableCell>
-                      {role === "Admin" && (
+                      {role === "Administrator" && (
                         <TableCell className="text-right">
                           <div className="flex gap-2 justify-end">
                             <Button
