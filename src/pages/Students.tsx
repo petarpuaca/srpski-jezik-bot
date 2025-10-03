@@ -206,17 +206,44 @@ const Students = () => {
     }
   };
 
+  // const handleRemovePredmetFromStudent = async (
+  //   studentId: string,
+  //   predmetId: string
+  // ) => {
+  //   if (!confirm("Da li ste sigurni da želite da uklonite predmet?")) return;
+  //   try {
+  //     await apiClient.delete(`/Students/${studentId}/predmet/${predmetId}`);
+  //     toast.success("Predmet uklonjen!");
+  //     fetchStudents();
+  //   } catch (error: any) {
+  //     toast.error("Greška: " + error.message);
+  //   }
+  // };
+
   const handleRemovePredmetFromStudent = async (
     studentId: string,
     predmetId: string
   ) => {
-    if (!confirm("Da li ste sigurni da želite da uklonite predmet?")) return;
+    if (!window.confirm("Da li ste sigurni da želite da uklonite predmet?"))
+      return;
+
     try {
-      await apiClient.delete(`/Students/${studentId}/predmet/${predmetId}`);
+      const path = `/StudentPredmet/${encodeURIComponent(
+        studentId
+      )},${encodeURIComponent(predmetId)}`;
+      await apiClient.delete(path);
+
       toast.success("Predmet uklonjen!");
-      fetchStudents();
-    } catch (error: any) {
-      toast.error("Greška: " + error.message);
+      await fetchStudents(); // osveži listu
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const msg =
+        (Array.isArray(data?.errors) && data.errors.join(", ")) ||
+        (typeof data === "string" ? data : "") ||
+        data?.title ||
+        data?.message ||
+        err.message;
+      toast.error("Greška: " + msg);
     }
   };
 
