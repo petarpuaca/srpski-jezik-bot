@@ -3,7 +3,13 @@ import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Ispit, Predmet, Rok, PredmetDeo } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +37,6 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Plus, Trash2 } from "lucide-react";
-
 
 export default function Ispiti() {
   const { toast } = useToast();
@@ -75,7 +80,7 @@ export default function Ispiti() {
     try {
       const studentIndex = sessionStorage.getItem("studentIndex");
       if (!studentIndex) return;
-      
+
       const data = await apiClient.get(`/Students/${studentIndex}`);
       setPredmeti(data.predmeti || []);
     } catch (error) {
@@ -122,7 +127,7 @@ export default function Ispiti() {
       godina: new Date().getFullYear(),
     });
     setSelectedRok(null);
-    
+
     // Učitaj delove predmeta
     try {
       const data = await apiClient.get(`/PredmetDelovi/${predmet.id}/delovi`);
@@ -134,7 +139,7 @@ export default function Ispiti() {
         variant: "destructive",
       });
     }
-    
+
     setShowPrijavaDialog(true);
   };
 
@@ -164,7 +169,7 @@ export default function Ispiti() {
       };
 
       await apiClient.post("/Prijava", payload);
-      
+
       toast({
         title: "Uspešno",
         description: "Ispit je uspešno prijavljen.",
@@ -201,13 +206,13 @@ export default function Ispiti() {
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {predmeti.map((predmet) => (
-                <Card key={predmet.id} className="hover:shadow-lg transition-shadow">
+                <Card
+                  key={predmet.id}
+                  className="hover:shadow-lg transition-shadow"
+                >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <BookOpen className="h-5 w-5 text-primary" />
-                      <span className="text-xs text-muted-foreground">
-                        {predmet.espb} ESPB
-                      </span>
                     </div>
                     <CardTitle className="text-lg">{predmet.naziv}</CardTitle>
                   </CardHeader>
@@ -247,8 +252,8 @@ export default function Ispiti() {
                   <TableHead>Rok</TableHead>
                   <TableHead>Deo</TableHead>
                   <TableHead>Datum Prijave</TableHead>
-                  <TableHead>Datum Početka</TableHead>
-                  <TableHead>Datum Završetka</TableHead>
+                  <TableHead>Datum Početka roka</TableHead>
+                  <TableHead>Datum Završetka roka</TableHead>
                   <TableHead>Akcije</TableHead>
                 </TableRow>
               </TableHeader>
@@ -264,14 +269,20 @@ export default function Ispiti() {
                     </TableCell>
                     <TableCell>
                       {ispit.datumPrijave
-                        ? new Date(ispit.datumPrijave).toLocaleDateString("sr-RS")
+                        ? new Date(ispit.datumPrijave).toLocaleDateString(
+                            "sr-RS"
+                          )
                         : new Date().toLocaleDateString("sr-RS")}
                     </TableCell>
                     <TableCell>
-                      {new Date(ispit.rokDatumPocetka).toLocaleDateString("sr-RS")}
+                      {new Date(ispit.rokDatumPocetka).toLocaleDateString(
+                        "sr-RS"
+                      )}
                     </TableCell>
                     <TableCell>
-                      {new Date(ispit.rokDatumZavrsetka).toLocaleDateString("sr-RS")}
+                      {new Date(ispit.rokDatumZavrsetka).toLocaleDateString(
+                        "sr-RS"
+                      )}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -337,7 +348,9 @@ export default function Ispiti() {
                   <Input
                     id="datumPocetka"
                     type="text"
-                    value={new Date(selectedRok.datumPocetka).toLocaleDateString("sr-RS")}
+                    value={new Date(
+                      selectedRok.datumPocetka
+                    ).toLocaleDateString("sr-RS")}
                     disabled
                   />
                 </div>
@@ -347,7 +360,9 @@ export default function Ispiti() {
                   <Input
                     id="datumZavrsetka"
                     type="text"
-                    value={new Date(selectedRok.datumZavrsetka).toLocaleDateString("sr-RS")}
+                    value={new Date(
+                      selectedRok.datumZavrsetka
+                    ).toLocaleDateString("sr-RS")}
                     disabled
                   />
                 </div>
@@ -389,7 +404,10 @@ export default function Ispiti() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPrijavaDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowPrijavaDialog(false)}
+            >
               Otkaži
             </Button>
             <Button onClick={handlePrijavaIspita}>Prijavi Ispit</Button>
