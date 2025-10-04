@@ -57,6 +57,18 @@ export interface IspitStavka {
   ocena?: number;
 }
 
+export interface Rok {
+  idRok: number;
+  tip: string;
+  datumPocetka: string;
+  datumZavrsetka: string;
+}
+
+export interface PredmetDeo {
+  deoId: number;
+  naziv: string;
+}
+
 export interface Ispit {
   id: string;
   rok: string;

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { Ispit, Predmet } from "@/lib/types";
+import { Ispit, Predmet, Rok, PredmetDeo } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -32,24 +32,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Plus } from "lucide-react";
 
-const rokOptions = [
-  "Januarski",
-  "Februarski",
-  "Aprilski",
-  "Junski",
-  "Avgustovski",
-  "Septembar 1",
-  "Septembar 2",
-  "Oktobar",
-];
-
-const deoOptions = [
-  "Pismeni",
-  "Usmeni",
-  "Ceo ispit",
-  "Kolokvijum 1",
-  "Kolokvijum 2",
-];
 
 export default function Ispiti() {
   const { toast } = useToast();
@@ -57,10 +39,13 @@ export default function Ispiti() {
   const [ispiti, setIspiti] = useState<Ispit[]>([]);
   const [showPrijavaDialog, setShowPrijavaDialog] = useState(false);
   const [selectedPredmet, setSelectedPredmet] = useState<Predmet | null>(null);
+  const [rokovi, setRokovi] = useState<Rok[]>([]);
+  const [predmetDelovi, setPredmetDelovi] = useState<PredmetDeo[]>([]);
+  const [selectedRok, setSelectedRok] = useState<Rok | null>(null);
   const [formData, setFormData] = useState({
-    rok: "",
-    deo: "",
-    godina: new Date().getFullYear().toString(),
+    idRok: 0,
+    deoId: 0,
+    godina: new Date().getFullYear(),
   });
 
   const studentId = sessionStorage.getItem("studentId");
@@ -69,8 +54,22 @@ export default function Ispiti() {
     if (studentId) {
       fetchStudentPredmeti();
       fetchStudentIspiti();
+      fetchRokovi();
     }
   }, [studentId]);
+
+  const fetchRokovi = async () => {
+    try {
+      const data = await apiClient.get("/Rok");
+      setRokovi(data || []);
+    } catch (error) {
+      toast({
+        title: "Greška",
+        description: "Nije moguće učitati rokove.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const fetchStudentPredmeti = async () => {
     try {
@@ -98,18 +97,32 @@ export default function Ispiti() {
     }
   };
 
-  const openPrijavaDialog = (predmet: Predmet) => {
+  const openPrijavaDialog = async (predmet: Predmet) => {
     setSelectedPredmet(predmet);
     setFormData({
-      rok: "",
-      deo: "",
-      godina: new Date().getFullYear().toString(),
+      idRok: 0,
+      deoId: 0,
+      godina: new Date().getFullYear(),
     });
+    setSelectedRok(null);
+    
+    // Učitaj delove predmeta
+    try {
+      const data = await apiClient.get(`/PredmetDelovi/${predmet.id}/delovi`);
+      setPredmetDelovi(data || []);
+    } catch (error) {
+      toast({
+        title: "Greška",
+        description: "Nije moguće učitati delove predmeta.",
+        variant: "destructive",
+      });
+    }
+    
     setShowPrijavaDialog(true);
   };
 
   const handlePrijavaIspita = async () => {
-    if (!selectedPredmet || !studentId || !formData.rok || !formData.deo) {
+    if (!selectedPredmet || !studentId || !formData.idRok || !formData.deoId) {
       toast({
         title: "Greška",
         description: "Molimo popunite sva polja.",
@@ -122,17 +135,18 @@ export default function Ispiti() {
       const payload = {
         studentId: studentId,
         predmetId: selectedPredmet.id,
-        rok: formData.rok,
-        godina: parseInt(formData.godina),
+        idRok: formData.idRok,
+        godina: formData.godina,
         stavke: [
           {
-            deo: formData.deo,
-            stavkaId: crypto.randomUUID(),
+            deoId: formData.deoId,
+            poeni: 0,
+            ocena: 0,
           },
         ],
       };
 
-      await apiClient.post("/Ispit", payload);
+      await apiClient.post("/Prijava", payload);
       
       toast({
         title: "Uspešno",
@@ -261,39 +275,66 @@ export default function Ispiti() {
             <div className="grid gap-2">
               <Label htmlFor="rok">Rok</Label>
               <Select
-                value={formData.rok}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, rok: value })
-                }
+                value={formData.idRok.toString()}
+                onValueChange={(value) => {
+                  const idRok = parseInt(value);
+                  const rok = rokovi.find((r) => r.idRok === idRok);
+                  setSelectedRok(rok || null);
+                  setFormData({ ...formData, idRok });
+                }}
               >
                 <SelectTrigger id="rok">
                   <SelectValue placeholder="Izaberite rok" />
                 </SelectTrigger>
                 <SelectContent>
-                  {rokOptions.map((rok) => (
-                    <SelectItem key={rok} value={rok}>
-                      {rok}
+                  {rokovi.map((rok) => (
+                    <SelectItem key={rok.idRok} value={rok.idRok.toString()}>
+                      {rok.tip}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
+            {selectedRok && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="datumPocetka">Datum Početka</Label>
+                  <Input
+                    id="datumPocetka"
+                    type="text"
+                    value={new Date(selectedRok.datumPocetka).toLocaleDateString("sr-RS")}
+                    disabled
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="datumZavrsetka">Datum Završetka</Label>
+                  <Input
+                    id="datumZavrsetka"
+                    type="text"
+                    value={new Date(selectedRok.datumZavrsetka).toLocaleDateString("sr-RS")}
+                    disabled
+                  />
+                </div>
+              </>
+            )}
+
             <div className="grid gap-2">
-              <Label htmlFor="deo">Deo Ispita</Label>
+              <Label htmlFor="deo">Deo Predmeta</Label>
               <Select
-                value={formData.deo}
+                value={formData.deoId.toString()}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, deo: value })
+                  setFormData({ ...formData, deoId: parseInt(value) })
                 }
               >
                 <SelectTrigger id="deo">
                   <SelectValue placeholder="Izaberite deo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {deoOptions.map((deo) => (
-                    <SelectItem key={deo} value={deo}>
-                      {deo}
+                  {predmetDelovi.map((deo) => (
+                    <SelectItem key={deo.deoId} value={deo.deoId.toString()}>
+                      {deo.naziv}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -307,7 +348,7 @@ export default function Ispiti() {
                 type="number"
                 value={formData.godina}
                 onChange={(e) =>
-                  setFormData({ ...formData, godina: e.target.value })
+                  setFormData({ ...formData, godina: parseInt(e.target.value) })
                 }
               />
             </div>
