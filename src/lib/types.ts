@@ -10,6 +10,7 @@ export interface Student {
 export interface StudentPredmet {
   id: string;
   naziv: string;
+  espb: number;
   ocena: number;
 }
 
