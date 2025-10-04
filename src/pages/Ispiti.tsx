@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, Plus, Trash2 } from "lucide-react";
 
 
 export default function Ispiti() {
@@ -90,10 +90,27 @@ export default function Ispiti() {
   const fetchStudentIspiti = async () => {
     try {
       if (!studentId) return;
-      const data = await apiClient.get(`/Ispit/student/${studentId}`);
+      const data = await apiClient.get(`/Prijava/student/${studentId}`);
       setIspiti(data || []);
     } catch (error) {
       console.error("Error fetching ispiti:", error);
+    }
+  };
+
+  const handleOdjaviIspit = async (ispitId: string) => {
+    try {
+      await apiClient.delete(`/Prijava/${ispitId}`);
+      toast({
+        title: "Uspešno",
+        description: "Ispit je uspešno odjavljen.",
+      });
+      fetchStudentIspiti();
+    } catch (error) {
+      toast({
+        title: "Greška",
+        description: "Nije moguće odjaviti ispit.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -229,25 +246,42 @@ export default function Ispiti() {
                   <TableHead>Predmet</TableHead>
                   <TableHead>Rok</TableHead>
                   <TableHead>Deo</TableHead>
-                  <TableHead>Godina</TableHead>
                   <TableHead>Datum Prijave</TableHead>
+                  <TableHead>Datum Početka</TableHead>
+                  <TableHead>Datum Završetka</TableHead>
+                  <TableHead>Akcije</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {ispiti.map((ispit) => (
                   <TableRow key={ispit.id}>
                     <TableCell className="font-medium">
-                      {ispit.predmet?.naziv || "N/A"}
+                      {ispit.predmetNaziv}
                     </TableCell>
-                    <TableCell>{ispit.rok}</TableCell>
+                    <TableCell>{ispit.rokTip}</TableCell>
                     <TableCell>
-                      {ispit.stavke?.map((s) => s.deo).join(", ") || "N/A"}
+                      {ispit.stavke?.map((s) => s.deoNaziv).join(", ") || "N/A"}
                     </TableCell>
-                    <TableCell>{ispit.godina}</TableCell>
                     <TableCell>
                       {ispit.datumPrijave
                         ? new Date(ispit.datumPrijave).toLocaleDateString("sr-RS")
                         : new Date().toLocaleDateString("sr-RS")}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(ispit.rokDatumPocetka).toLocaleDateString("sr-RS")}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(ispit.rokDatumZavrsetka).toLocaleDateString("sr-RS")}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleOdjaviIspit(ispit.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Odjavi
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

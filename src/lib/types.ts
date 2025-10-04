@@ -71,18 +71,20 @@ export interface PredmetDeo {
 
 export interface Ispit {
   id: string;
-  rok: string;
+  studentId: string;
+  predmetId: string;
+  idRok: number;
+  rokTip: string;
+  rokDatumPocetka: string;
+  rokDatumZavrsetka: string;
+  predmetNaziv: string;
   godina: number;
-  student?: {
+  stavke: {
     id: string;
-    ime: string;
-    prezime: string;
-    index: string;
-  };
-  predmet?: {
-    id: string;
-    naziv: string;
-  };
-  stavke: IspitStavka[];
+    deoId: number;
+    poeni: number;
+    deoNaziv: string;
+    ocena: number;
+  }[];
   datumPrijave?: string;
 }
