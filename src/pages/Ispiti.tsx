@@ -259,8 +259,16 @@ export default function Ispiti() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ispiti.map((ispit) => (
-                  <TableRow key={ispit.id}>
+                {ispiti
+                  .filter((ispit) =>
+                    ispit.stavke?.every(
+                      (stavka) =>
+                        (stavka.poeni === 0 || stavka.poeni === null || stavka.poeni === undefined) &&
+                        (stavka.ocena === 0 || stavka.ocena === null || stavka.ocena === undefined)
+                    )
+                  )
+                  .map((ispit) => (
+                    <TableRow key={ispit.id}>
                     <TableCell className="font-medium">
                       {ispit.predmetNaziv}
                     </TableCell>
