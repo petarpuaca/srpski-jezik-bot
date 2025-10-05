@@ -29,6 +29,13 @@ const Dashboard = () => {
       description: "Upravljanje predmetima",
       color: "from-purple-500 to-purple-600",
     },
+    {
+      title: "Unos Ocena",
+      icon: GraduationCap,
+      path: "/prijave-po-roku",
+      description: "Unos ocena po rokovima",
+      color: "from-green-500 to-green-600",
+    },
   ];
 
   const studentCards = [

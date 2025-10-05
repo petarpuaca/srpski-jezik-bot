@@ -89,3 +89,25 @@ export interface Ispit {
   }[];
   datumPrijave?: string;
 }
+
+export interface PrijavaPoRoku {
+  prijavaId: string;
+  studentId: string;
+  studentIme: string;
+  studentPrezime: string;
+  studentIndex: string;
+  predmetId: string;
+  predmetNaziv: string;
+  idRok: number;
+  rokTip: string;
+  rokDatumPocetka: string;
+  rokDatumZavrsetka: string;
+  godina: number;
+  stavke: {
+    id: string;
+    deoId: number;
+    poeni: number;
+    deoNaziv: string;
+    ocena: number;
+  }[];
+}
