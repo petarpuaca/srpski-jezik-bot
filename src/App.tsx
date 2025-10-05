@@ -12,6 +12,7 @@ import Profesori from "./pages/Profesori";
 import Predmeti from "./pages/Predmeti";
 import Ispiti from "./pages/Ispiti";
 import Ocene from "./pages/Ocene";
+import Info from "./pages/Info";
 import PrijavePoRoku from "./pages/PrijavePoRoku";
 import NotFound from "./pages/NotFound";
 
@@ -75,6 +76,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <Ocene />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/info"
+          element={
+            <ProtectedRoute>
+              <Info />
             </ProtectedRoute>
           }
         />

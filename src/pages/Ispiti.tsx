@@ -82,7 +82,8 @@ export default function Ispiti() {
       if (!studentIndex) return;
 
       const data = await apiClient.get(`/Students/${studentIndex}`);
-      setPredmeti(data.predmeti || []);
+      const predmetiSaOcenom5 = (data.predmeti || []).filter((p: any) => p.ocena === 5);
+      setPredmeti(predmetiSaOcenom5);
     } catch (error) {
       toast({
         title: "Greška",
@@ -272,7 +273,7 @@ export default function Ispiti() {
                         ? new Date(ispit.datumPrijave).toLocaleDateString(
                             "sr-RS"
                           )
-                        : new Date().toLocaleDateString("sr-RS")}
+                        : "N/A"}
                     </TableCell>
                     <TableCell>
                       {new Date(ispit.rokDatumPocetka).toLocaleDateString(

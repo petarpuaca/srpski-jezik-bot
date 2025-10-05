@@ -53,6 +53,13 @@ const Dashboard = () => {
       description: "Pregled ocena",
       color: "from-indigo-500 to-indigo-600",
     },
+    {
+      title: "Info",
+      icon: Users,
+      path: "/info",
+      description: "Lični podaci",
+      color: "from-purple-500 to-purple-600",
+    },
   ];
 
   const cards = role === "Administrator" ? adminCards : studentCards;
