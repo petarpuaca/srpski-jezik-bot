@@ -119,4 +119,15 @@ All colors MUST be HSL.
   .card-gradient {
     background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--secondary)) 100%);
   }
+
+  /* Remove spinner arrows from number inputs */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 }
