@@ -40,6 +40,7 @@ import { BookOpen, Plus, Trash2 } from "lucide-react";
 
 export default function Ispiti() {
   const { toast } = useToast();
+
   const [predmeti, setPredmeti] = useState<Predmet[]>([]);
   const [ispiti, setIspiti] = useState<Ispit[]>([]);
   const [showPrijavaDialog, setShowPrijavaDialog] = useState(false);
@@ -55,12 +56,22 @@ export default function Ispiti() {
 
   const studentId = sessionStorage.getItem("studentId");
 
+  // [ADD] — lokalno čuvamo vreme prijave po ID-ju prijave (persistira u sessionStorage)
+  const [localTimestamps, setLocalTimestamps] = useState<
+    Record<string, string>
+  >(() => JSON.parse(sessionStorage.getItem("prijavaTimestamps") || "{}"));
+  const saveTimestamps = (map: Record<string, string>) => {
+    setLocalTimestamps(map);
+    sessionStorage.setItem("prijavaTimestamps", JSON.stringify(map));
+  };
+
   useEffect(() => {
     if (studentId) {
       fetchStudentPredmeti();
-      fetchStudentIspiti();
+      fetchStudentIspiti(); // [KEEP]
       fetchRokovi();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [studentId]);
 
   const fetchRokovi = async () => {
@@ -82,7 +93,9 @@ export default function Ispiti() {
       if (!studentIndex) return;
 
       const data = await apiClient.get(`/Students/${studentIndex}`);
-      const predmetiSaOcenom5 = (data.predmeti || []).filter((p: any) => p.ocena === 5);
+      const predmetiSaOcenom5 = (data.predmeti || []).filter(
+        (p: any) => p.ocena === 5
+      );
       setPredmeti(predmetiSaOcenom5);
     } catch (error) {
       toast({
@@ -93,11 +106,16 @@ export default function Ispiti() {
     }
   };
 
+  // [CHANGE] — pri učitavanju prijava, dopuni svaku sa clientDatumPrijave iz localTimestamps
   const fetchStudentIspiti = async () => {
     try {
       if (!studentId) return;
       const data = await apiClient.get(`/Prijava/student/${studentId}`);
-      setIspiti(data || []);
+      const merged = (data || []).map((x: any) => ({
+        ...x,
+        clientDatumPrijave: localTimestamps[x.id] || null,
+      }));
+      setIspiti(merged);
     } catch (error) {
       console.error("Error fetching ispiti:", error);
     }
@@ -110,6 +128,14 @@ export default function Ispiti() {
         title: "Uspešno",
         description: "Ispit je uspešno odjavljen.",
       });
+
+      // [ADD] — očisti lokalni timestamp za odjavljenu prijavu (da ne ostane „viseći“)
+      const copy = { ...localTimestamps };
+      if (copy[ispitId]) {
+        delete copy[ispitId];
+        saveTimestamps(copy);
+      }
+
       fetchStudentIspiti();
     } catch (error) {
       toast({
@@ -129,7 +155,6 @@ export default function Ispiti() {
     });
     setSelectedRok(null);
 
-    // Učitaj delove predmeta
     try {
       const data = await apiClient.get(`/PredmetDelovi/${predmet.id}/delovi`);
       setPredmetDelovi(data || []);
@@ -144,6 +169,7 @@ export default function Ispiti() {
     setShowPrijavaDialog(true);
   };
 
+  // [CHANGE] — zabeleži vreme „sada“ i poveži ga sa novim ID-jem/eva nakon POST-a
   const handlePrijavaIspita = async () => {
     if (!selectedPredmet || !studentId || !formData.idRok || !formData.deoId) {
       toast({
@@ -153,6 +179,10 @@ export default function Ispiti() {
       });
       return;
     }
+
+    // ID-jevi postojećih prijava, da bi prepoznali novu
+    const beforeIds = new Set(ispiti.map((i) => i.id));
+    const nowISO = new Date().toISOString();
 
     try {
       const payload = {
@@ -177,7 +207,26 @@ export default function Ispiti() {
       });
 
       setShowPrijavaDialog(false);
-      fetchStudentIspiti();
+
+      // ponovo učitaj prijave
+      const data = await apiClient.get(`/Prijava/student/${studentId}`);
+
+      // nađi koje su nove (u odnosu na pre slanja)
+      const newOnes = (data || []).filter((i: any) => !beforeIds.has(i.id));
+      if (newOnes.length > 0) {
+        const copy = { ...localTimestamps };
+        newOnes.forEach((i: any) => (copy[i.id] = nowISO));
+        saveTimestamps(copy);
+      }
+
+      // spoji clientDatumPrijave u state
+      const merged = (data || []).map((x: any) => ({
+        ...x,
+        clientDatumPrijave:
+          localTimestamps[x.id] ||
+          (newOnes.find((n: any) => n.id === x.id) ? nowISO : null),
+      }));
+      setIspiti(merged);
     } catch (error) {
       toast({
         title: "Greška",
@@ -263,48 +312,60 @@ export default function Ispiti() {
                   .filter((ispit) =>
                     ispit.stavke?.every(
                       (stavka) =>
-                        (stavka.poeni === 0 || stavka.poeni === null || stavka.poeni === undefined) &&
-                        (stavka.ocena === 0 || stavka.ocena === null || stavka.ocena === undefined)
+                        (stavka.poeni === 0 ||
+                          stavka.poeni === null ||
+                          stavka.poeni === undefined) &&
+                        (stavka.ocena === 0 ||
+                          stavka.ocena === null ||
+                          stavka.ocena === undefined)
                     )
                   )
                   .map((ispit) => (
                     <TableRow key={ispit.id}>
-                    <TableCell className="font-medium">
-                      {ispit.predmetNaziv}
-                    </TableCell>
-                    <TableCell>{ispit.rokTip}</TableCell>
-                    <TableCell>
-                      {ispit.stavke?.map((s) => s.deoNaziv).join(", ") || "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {ispit.datumPrijave
-                        ? new Date(ispit.datumPrijave).toLocaleDateString(
-                            "sr-RS"
-                          )
-                        : "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(ispit.rokDatumPocetka).toLocaleDateString(
-                        "sr-RS"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(ispit.rokDatumZavrsetka).toLocaleDateString(
-                        "sr-RS"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleOdjaviIspit(ispit.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Odjavi
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      <TableCell className="font-medium">
+                        {ispit.predmetNaziv}
+                      </TableCell>
+                      <TableCell>{ispit.rokTip}</TableCell>
+                      <TableCell>
+                        {ispit.stavke?.map((s) => s.deoNaziv).join(", ") ||
+                          "N/A"}
+                      </TableCell>
+
+                      {/* [CHANGE] — preferiraj server datum; u suprotnom koristi clientDatumPrijave; prikaži i vreme */}
+                      <TableCell>
+                        {(() => {
+                          const source =
+                            (ispit as any).datumPrijave ||
+                            (ispit as any).clientDatumPrijave ||
+                            null;
+                          return source
+                            ? new Date(source).toLocaleDateString("sr-RS")
+                            : "N/A";
+                        })()}
+                      </TableCell>
+
+                      <TableCell>
+                        {new Date(ispit.rokDatumPocetka).toLocaleDateString(
+                          "sr-RS"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(ispit.rokDatumZavrsetka).toLocaleDateString(
+                          "sr-RS"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleOdjaviIspit(ispit.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Odjavi
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
             {ispiti.length === 0 && (
