@@ -47,6 +47,9 @@ export default function Info() {
   const polozenIPredmeti = student.predmeti?.filter((p) => p.ocena > 5) || [];
   const nepolozenIPredmeti = student.predmeti?.filter((p) => p.ocena === 5) || [];
   const ukupanESPB = polozenIPredmeti.reduce((sum, p) => sum + p.espb, 0);
+  const prosek = polozenIPredmeti.length > 0 
+    ? (polozenIPredmeti.reduce((sum, p) => sum + p.ocena, 0) / polozenIPredmeti.length).toFixed(2)
+    : "0.00";
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -83,6 +86,10 @@ export default function Info() {
             <div>
               <p className="text-sm text-muted-foreground mb-1">Ukupno ESPB</p>
               <p className="text-lg font-semibold text-green-600">{ukupanESPB}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Prosek</p>
+              <p className="text-lg font-semibold text-blue-600">{prosek}</p>
             </div>
           </CardContent>
         </Card>
