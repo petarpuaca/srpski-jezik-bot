@@ -307,7 +307,13 @@ export default function PrijavePoRoku() {
                       </div>
                       {ispit.stavke.map((stavka) => (
                         <div key={stavka.id} className="border-t pt-4">
-                          <div className={`grid grid-cols-1 gap-4 items-end ${stavka.deoNaziv === "Ceo ispit" ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+                          <div
+                            className={`grid grid-cols-1 gap-4 items-end ${
+                              stavka.deoNaziv === "Ceo Ispit"
+                                ? "md:grid-cols-3"
+                                : "md:grid-cols-2"
+                            }`}
+                          >
                             <div>
                               <Label htmlFor={`poeni-${stavka.id}`}>
                                 Poeni
@@ -326,7 +332,7 @@ export default function PrijavePoRoku() {
                                 }
                               />
                             </div>
-                            {stavka.deoNaziv === "Ceo ispit" && (
+                            {stavka.deoNaziv === "Ceo Ispit" && (
                               <div>
                                 <Label htmlFor={`ocena-${stavka.id}`}>
                                   Konacna ocena
