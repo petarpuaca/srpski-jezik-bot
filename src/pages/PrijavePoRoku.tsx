@@ -92,12 +92,15 @@ export default function PrijavePoRoku() {
       const data = await apiClient.get(
         `/Prijava/student/${prijava.studentId}/predmet/${prijava.predmetId}`
       );
-      setStudentPrijave(data);
+      
+      // Filter prijave by selected rok
+      const filteredData = data.filter((ispit: Ispit) => ispit.idRok === selectedRokId);
+      setStudentPrijave(filteredData);
 
       // Initialize edited data with current values
       const initialData: { [key: string]: { poeni: number; ocena: number } } =
         {};
-      data.forEach((ispit: Ispit) => {
+      filteredData.forEach((ispit: Ispit) => {
         ispit.stavke.forEach((stavka) => {
           initialData[stavka.id] = {
             poeni: stavka.poeni,
